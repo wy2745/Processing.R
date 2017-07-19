@@ -1,5 +1,9 @@
 language: java
 
+os:
+  - linux
+  - osx
+
 services: docker
 
 jdk:
@@ -7,18 +11,38 @@ jdk:
 
 before_install:
   - .ci/init.sh
+  - '
+  if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+    sudo apt-get install ant-optional;
+  fi
+  '
 
 install:
-  - sudo apt-get install ant-optional
   - ant info
   - ant try
   - ant package
 
 script:
   # See https://askubuntu.com/a/693533
-  - xvfb-run -a -s "-screen 0 1024x768x24" ant report
-  - docker run -v=$(pwd):/app --workdir=/app coala/base coala --ci
+  - '
+  if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+    xvfb-run -a -s "-screen 0 1024x768x24" ant report;
+  fi
+  '
+  - '
+  if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+    docker run -v=$(pwd):/app --workdir=/app coala/base coala --ci;
+  fi
+  '
 
 after_success:
-  - curl https://secure.central.sonatype.com/maven2/com/codacy/codacy-coverage-reporter/1.0.13/codacy-coverage-reporter-1.0.13-assembly.jar > codacy-coverage-reporter-assembly.jar
-  - java -cp codacy-coverage-reporter-assembly.jar com.codacy.CodacyCoverageReporter -l Java -r test-output/site/jacoco/report.xml
+  - '
+  if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+    curl https://secure.central.sonatype.com/maven2/com/codacy/codacy-coverage-reporter/1.0.13/codacy-coverage-reporter-1.0.13-assembly.jar > codacy-coverage-reporter-assembly.jar
+  fi
+  '
+  - '
+  if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+    java -cp codacy-coverage-reporter-assembly.jar com.codacy.CodacyCoverageReporter -l Java -r test-output/site/jacoco/report.xml
+  fi
+  '
